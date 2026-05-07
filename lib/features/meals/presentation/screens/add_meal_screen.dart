@@ -8,7 +8,13 @@ import 'package:mealp/features/meals/domain/models/food_item.dart';
 
 class AddMealScreen extends ConsumerStatefulWidget {
   final DateTime selectedDate;
-  const AddMealScreen({super.key, required this.selectedDate});
+  final Meal? mealToEdit;
+
+  const AddMealScreen({
+    super.key, 
+    required this.selectedDate,
+    this.mealToEdit,
+  });
 
   @override
   ConsumerState<AddMealScreen> createState() => _AddMealScreenState();
@@ -17,9 +23,34 @@ class AddMealScreen extends ConsumerStatefulWidget {
 class _AddMealScreenState extends ConsumerState<AddMealScreen> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(text: '100');
+  final TextEditingController _notesController = TextEditingController();
+  
   FoodItem? _selectedFood;
   MealType _selectedType = MealType.breakfast;
   String _searchQuery = '';
+  bool _isEditMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.mealToEdit != null) {
+      _isEditMode = true;
+      _selectedType = widget.mealToEdit!.type;
+      _quantityController.text = widget.mealToEdit!.quantity.toInt().toString();
+      _notesController.text = widget.mealToEdit!.notes;
+      _searchController.text = widget.mealToEdit!.foodName;
+      // Note: In a real app, we'd fetch the FoodItem from the DB using foodId
+      // For this implementation, we'll create a temporary FoodItem to represent the current state
+      _selectedFood = FoodItem(
+        id: widget.mealToEdit!.foodId,
+        name: widget.mealToEdit!.foodName,
+        calories: widget.mealToEdit!.calories / (widget.mealToEdit!.quantity / 100),
+        protein: widget.mealToEdit!.protein / (widget.mealToEdit!.quantity / 100),
+        carbs: widget.mealToEdit!.carbs / (widget.mealToEdit!.quantity / 100),
+        fats: widget.mealToEdit!.fats / (widget.mealToEdit!.quantity / 100),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +60,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Meal'),
+        title: Text(_isEditMode ? 'Edit Meal' : 'Add Meal'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -37,7 +68,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Meal Type Selector
-            const Text('Select Meal Type', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Meal Type', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -46,7 +77,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
             const SizedBox(height: 24),
 
             // Search Food
-            const Text('Search Food', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Search Food Item', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             TextField(
               controller: _searchController,
@@ -56,7 +87,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Theme.of(context).cardColor,
               ),
             ),
             const SizedBox(height: 12),
@@ -65,7 +96,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
               Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListView.separated(
@@ -92,20 +123,42 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
             const SizedBox(height: 24),
 
             if (_selectedFood != null) ...[
-              const Text('Quantity (g / units)', style: TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _quantityController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            suffixText: _selectedFood!.unit,
+                          ),
+                          onChanged: (val) => setState(() {}),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Text('Notes (Optional)', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               TextField(
-                controller: _quantityController,
-                keyboardType: TextInputType.number,
+                controller: _notesController,
+                maxLines: 2,
                 decoration: InputDecoration(
+                  hintText: 'Add some notes...',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  suffixText: _selectedFood!.unit,
                 ),
-                onChanged: (val) => setState(() {}),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               _buildSummary(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -116,7 +169,10 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text('Save Meal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    _isEditMode ? 'Update Meal' : 'Add to Plan', 
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -133,14 +189,14 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? _getMealColor(type) : Colors.white,
+          color: isSelected ? _getMealColor(type) : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? _getMealColor(type) : Colors.grey.shade300),
+          border: Border.all(color: isSelected ? _getMealColor(type) : Colors.grey.withOpacity(0.3)),
         ),
         child: Text(
           type.name.substring(0, 1).toUpperCase() + type.name.substring(1),
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black,
+            color: isSelected ? Colors.white : null,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -159,7 +215,7 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
         title: Text(_selectedFood!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('${_selectedFood!.calories.toInt()} Kcal per ${_selectedFood!.unit}'),
         trailing: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.change_circle_outlined, color: AppColors.primary),
           onPressed: () => setState(() {
             _selectedFood = null;
             _searchController.clear();
@@ -171,26 +227,35 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
 
   Widget _buildSummary() {
     double qty = double.tryParse(_quantityController.text) ?? 0;
-    double factor = qty / 100; // Assuming basic nutrients are per 100g if unit is 'g'
-    if (_selectedFood!.unit != 'g' && _selectedFood!.unit != '100g') {
-      factor = qty; // Per unit
-    }
+    double factor = (_selectedFood!.unit == 'g' || _selectedFood!.unit == '100g') ? qty / 100 : qty;
 
     double totalCals = _selectedFood!.calories * factor;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _buildSummaryItem('Calories', '${totalCals.toInt()}'),
-          _buildSummaryItem('Protein', '${(_selectedFood!.protein * factor).toInt()}g'),
-          _buildSummaryItem('Carbs', '${(_selectedFood!.carbs * factor).toInt()}g'),
-          _buildSummaryItem('Fats', '${(_selectedFood!.fats * factor).toInt()}g'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Estimated Calories', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('${totalCals.toInt()} kcal', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryItem('Protein', '${(_selectedFood!.protein * factor).toInt()}g'),
+              _buildSummaryItem('Carbs', '${(_selectedFood!.carbs * factor).toInt()}g'),
+              _buildSummaryItem('Fats', '${(_selectedFood!.fats * factor).toInt()}g'),
+            ],
+          ),
         ],
       ),
     );
@@ -211,20 +276,41 @@ class _AddMealScreenState extends ConsumerState<AddMealScreen> {
     
     double qty = double.tryParse(_quantityController.text) ?? 100;
     double factor = (_selectedFood!.unit == 'g' || _selectedFood!.unit == '100g') ? qty / 100 : qty;
+    final normalizedDate = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
 
-    final meal = Meal(
-      id: const Uuid().v4(),
-      foodName: _selectedFood!.name,
-      type: _selectedType,
-      quantity: qty,
-      calories: _selectedFood!.calories * factor,
-      protein: _selectedFood!.protein * factor,
-      carbs: _selectedFood!.carbs * factor,
-      fats: _selectedFood!.fats * factor,
-      date: widget.selectedDate,
-    );
-
-    ref.read(dailyMealsProvider(widget.selectedDate).notifier).addMeal(meal);
+    if (_isEditMode) {
+      final meal = widget.mealToEdit!.copyWith(
+        foodName: _selectedFood!.name,
+        type: _selectedType,
+        quantity: qty,
+        calories: _selectedFood!.calories * factor,
+        protein: _selectedFood!.protein * factor,
+        carbs: _selectedFood!.carbs * factor,
+        fats: _selectedFood!.fats * factor,
+        notes: _notesController.text,
+        date: normalizedDate,
+        updatedAt: DateTime.now(),
+      );
+      ref.read(dailyMealsProvider(normalizedDate).notifier).updateMeal(meal);
+    } else {
+      final meal = Meal(
+        id: const Uuid().v4(),
+        foodId: _selectedFood!.id,
+        foodName: _selectedFood!.name,
+        type: _selectedType,
+        quantity: qty,
+        calories: _selectedFood!.calories * factor,
+        protein: _selectedFood!.protein * factor,
+        carbs: _selectedFood!.carbs * factor,
+        fats: _selectedFood!.fats * factor,
+        date: normalizedDate,
+        notes: _notesController.text,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      ref.read(dailyMealsProvider(normalizedDate).notifier).addMeal(meal);
+    }
+    
     Navigator.pop(context);
   }
 

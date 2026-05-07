@@ -12,13 +12,22 @@ class LocalStorageService {
     await Hive.initFlutter();
     
     // Register Adapters
-    Hive.registerAdapter(FoodItemAdapter());
-    Hive.registerAdapter(MealTypeAdapter());
-    Hive.registerAdapter(MealAdapter());
+    if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(FoodItemAdapter());
+    if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(MealTypeAdapter());
+    if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(MealAdapter());
 
-    // Open Boxes
-    final foodBox = await Hive.openBox<FoodItem>(foodBoxName);
-    await Hive.openBox<Meal>(mealBoxName);
+    // Open Boxes with migration safety
+    late Box<FoodItem> foodBox;
+    try {
+      foodBox = await Hive.openBox<FoodItem>(foodBoxName);
+      await Hive.openBox<Meal>(mealBoxName);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(foodBoxName);
+      await Hive.deleteBoxFromDisk(mealBoxName);
+      foodBox = await Hive.openBox<FoodItem>(foodBoxName);
+      await Hive.openBox<Meal>(mealBoxName);
+    }
+    
     final settingsBox = await Hive.openBox(settingsBoxName);
 
     // Preload data if empty

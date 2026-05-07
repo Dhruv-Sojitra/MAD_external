@@ -16,12 +16,33 @@ class MealRepository {
     }).toList();
   }
 
+  List<Meal> getCompletedMeals(DateTime date) {
+    return getMealsByDate(date).where((m) => m.isCompleted).toList();
+  }
+
+  List<Meal> getPendingMeals(DateTime date) {
+    return getMealsByDate(date).where((m) => !m.isCompleted).toList();
+  }
+
   Future<void> addMeal(Meal meal) async {
     await _mealBox.put(meal.id, meal);
   }
 
   Future<void> updateMeal(Meal meal) async {
-    await _mealBox.put(meal.id, meal);
+    final updatedMeal = meal.copyWith(updatedAt: DateTime.now());
+    await _mealBox.put(meal.id, updatedMeal);
+  }
+
+  Future<void> toggleMealCompletion(String id) async {
+    final meal = _mealBox.get(id);
+    if (meal != null) {
+      final updatedMeal = meal.copyWith(
+        isCompleted: !meal.isCompleted,
+        completedAt: !meal.isCompleted ? DateTime.now() : null,
+        updatedAt: DateTime.now(),
+      );
+      await _mealBox.put(id, updatedMeal);
+    }
   }
 
   Future<void> deleteMeal(String id) async {

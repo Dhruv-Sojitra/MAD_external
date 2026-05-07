@@ -17,14 +17,15 @@ class MacroSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double percent = (current / goal).clamp(0.0, 1.0);
+    double percent = (current / goal).clamp(0.0, 1.2); // Allow slight overflow for color logic
+    Color statusColor = _getStatusColor(percent);
     
     return Card(
       elevation: 0,
-      color: color.withOpacity(0.05),
+      color: statusColor.withOpacity(0.05),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: color.withOpacity(0.2), width: 1),
+        side: BorderSide(color: statusColor.withOpacity(0.2), width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -36,7 +37,7 @@ class MacroSummaryCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: statusColor,
               ),
             ),
             const SizedBox(height: 8),
@@ -50,9 +51,9 @@ class MacroSummaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             LinearPercentIndicator(
               lineHeight: 4.0,
-              percent: percent,
-              backgroundColor: color.withOpacity(0.1),
-              progressColor: color,
+              percent: percent.clamp(0.0, 1.0),
+              backgroundColor: statusColor.withOpacity(0.1),
+              progressColor: statusColor,
               padding: EdgeInsets.zero,
               barRadius: const Radius.circular(2),
             ),
@@ -68,5 +69,11 @@ class MacroSummaryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(double percent) {
+    if (percent < 0.8) return color; // Default color for healthy
+    if (percent <= 1.0) return Colors.orange; // Near limit
+    return Colors.red; // Exceeded
   }
 }

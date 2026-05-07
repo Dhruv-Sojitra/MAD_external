@@ -1,52 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mealp/core/constants/colors.dart';
 import 'package:mealp/features/meals/providers/meal_provider.dart';
 import 'package:mealp/features/meals/presentation/widgets/summary_card.dart';
 import 'package:mealp/features/meals/presentation/widgets/macro_chart.dart';
+import 'package:mealp/features/meals/presentation/widgets/meal_card.dart';
 import 'package:mealp/features/meals/domain/models/meal.dart';
+import 'add_meal_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final today = DateTime.now();
-    final meals = ref.watch(dailyMealsProvider(today));
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final totals = ref.watch(nutritionTotalsProvider(today));
+    final stats = ref.watch(mealStatsProvider(today));
     final calorieGoal = ref.watch(calorieGoalProvider);
+    final remainingCalories = ref.watch(remainingCaloriesProvider(today));
+    final progress = ref.watch(nutritionProgressProvider(today));
     final macrosGoal = ref.watch(macrosGoalProvider);
-
-    double totalCalories = 0;
-    double totalProtein = 0;
-    double totalCarbs = 0;
-    double totalFats = 0;
-
-    for (var meal in meals) {
-      totalCalories += meal.calories;
-      totalProtein += meal.protein;
-      totalCarbs += meal.carbs;
-      totalFats += meal.fats;
-    }
-
-    double caloriePercent = (totalCalories / calorieGoal).clamp(0.0, 1.0);
-    double remainingCalories = calorieGoal - totalCalories;
+    final meals = ref.watch(dailyMealsProvider(today));
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120.0,
+            expandedHeight: 150.0,
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: const Text(
-                'My Dashboard',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                'Wellness Dashboard',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
               ),
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
+                ),
+                child: Center(
+                  child: Opacity(
+                    opacity: 0.2,
+                    child: Icon(Icons.fitness_center, size: 100, color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -55,46 +54,8 @@ class DashboardScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Calorie Progress Card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        CircularPercentIndicator(
-                          radius: 80.0,
-                          lineWidth: 12.0,
-                          animation: true,
-                          percent: caloriePercent,
-                          center: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${totalCalories.toInt()}',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Text('Kcal Eaten'),
-                            ],
-                          ),
-                          circularStrokeCap: CircularStrokeCap.round,
-                          progressColor: AppColors.primary,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildStatItem('Goal', '${calorieGoal.toInt()}'),
-                            _buildStatItem('Remaining', '${remainingCalories.toInt()}'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // Main Calorie Card
+                _buildMainCalorieCard(totals, calorieGoal, remainingCalories, progress, stats),
                 const SizedBox(height: 20),
                 
                 // Macros Row
@@ -103,7 +64,7 @@ class DashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: MacroSummaryCard(
                         label: 'Protein',
-                        current: totalProtein,
+                        current: totals['protein']!,
                         goal: macrosGoal['protein']!,
                         color: AppColors.protein,
                       ),
@@ -112,7 +73,7 @@ class DashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: MacroSummaryCard(
                         label: 'Carbs',
-                        current: totalCarbs,
+                        current: totals['carbs']!,
                         goal: macrosGoal['carbs']!,
                         color: AppColors.carbs,
                       ),
@@ -121,108 +82,196 @@ class DashboardScreen extends ConsumerWidget {
                     Expanded(
                       child: MacroSummaryCard(
                         label: 'Fats',
-                        current: totalFats,
+                        current: totals['fats']!,
                         goal: macrosGoal['fats']!,
                         color: AppColors.fats,
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 20),
+                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2, end: 0),
+                
+                const SizedBox(height: 24),
+                _buildMealStatusSummary(stats),
+                const SizedBox(height: 24),
 
-                // Recent Meals Header
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Today\'s Meals',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'View All',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                const Text(
+                  'Quick View',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
 
                 if (meals.isEmpty)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Text('No meals recorded today'),
-                    ),
-                  )
+                  _buildEmptyState()
                 else
-                  ...meals.take(3).map((meal) => _buildMealItem(meal)),
+                  ...meals.take(3).map((meal) => _buildMealItem(meal, ref, context)),
                 
                 const SizedBox(height: 20),
                 const MacroChart(),
-                const SizedBox(height: 80), // Space for bottom nav
+                const SizedBox(height: 100),
               ]),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add quick meal logic
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+    );
+  }
+
+  Widget _buildMainCalorieCard(Map<String, double> totals, double goal, double remaining, double progress, Map<String, int> stats) {
+    return Card(
+      elevation: 8,
+      shadowColor: AppColors.primary.withOpacity(0.2),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Daily Goal', style: TextStyle(color: AppColors.textSecondary)),
+                    Text('${goal.toInt()} kcal', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                CircularPercentIndicator(
+                  radius: 50.0,
+                  lineWidth: 8.0,
+                  animation: true,
+                  percent: progress,
+                  center: Text(
+                    "${(progress * 100).toInt()}%",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+                  ),
+                  circularStrokeCap: CircularStrokeCap.round,
+                  progressColor: _getProgressColor(progress),
+                  backgroundColor: AppColors.primary.withOpacity(0.05),
+                ),
+              ],
+            ),
+            const Divider(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatColumn('Consumed', '${totals['calories']!.toInt()}', AppColors.primary),
+                _buildStatColumn('Remaining', '${remaining.toInt()}', remaining > 0 ? Colors.green : Colors.red),
+                _buildStatColumn('Completed', '${stats['completed']}', AppColors.protein),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ).animate().scale(duration: 400.ms, curve: Curves.easeOut);
+  }
+
+  Widget _buildMealStatusSummary(Map<String, int> stats) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.assignment_turned_in, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Text(
+            '${stats['completed']} of ${stats['completed']! + stats['pending']!} meals completed today',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatColumn(String label, String value, Color color) {
     return Column(
       children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
+        Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
       ],
     );
   }
 
-  Widget _buildMealItem(Meal meal) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _getMealColor(meal.type).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(_getMealIcon(meal.type), color: _getMealColor(meal.type)),
+  Widget _buildMealItem(Meal meal, WidgetRef ref, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: MealCard(
+        meal: meal,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddMealScreen(selectedDate: meal.date, mealToEdit: meal),
+            ),
+          );
+        },
+        onEdit: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddMealScreen(selectedDate: meal.date, mealToEdit: meal),
+            ),
+          );
+        },
+      ),
+    ).animate().fadeIn().slideX();
+  }
+
+  void _showQuickActions(BuildContext context, Meal meal, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.edit, color: AppColors.primary),
+              title: const Text('Edit Meal'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AddMealScreen(selectedDate: meal.date, mealToEdit: meal)));
+              },
+            ),
+            ListTile(
+              leading: Icon(meal.isCompleted ? Icons.undo : Icons.check_circle, color: Colors.green),
+              title: Text(meal.isCompleted ? 'Mark as Pending' : 'Mark as Completed'),
+              onTap: () {
+                ref.read(dailyMealsProvider(meal.date).notifier).toggleMealCompletion(meal.id);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete Meal', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                ref.read(dailyMealsProvider(meal.date).notifier).deleteMeal(meal.id);
+                Navigator.pop(context);
+              },
+            ),
+          ],
         ),
-        title: Text(meal.foodName, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${meal.quantity.toInt()}g • ${meal.calories.toInt()} Kcal'),
-        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }
 
-  Color _getMealColor(MealType type) {
-    switch (type) {
-      case MealType.breakfast: return AppColors.breakfast;
-      case MealType.lunch: return AppColors.lunch;
-      case MealType.dinner: return AppColors.dinner;
-      case MealType.snacks: return AppColors.snacks;
-    }
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Text('No meals recorded today', style: TextStyle(color: Colors.grey)),
+      ),
+    );
   }
 
-  IconData _getMealIcon(MealType type) {
-    switch (type) {
-      case MealType.breakfast: return Icons.wb_sunny_outlined;
-      case MealType.lunch: return Icons.light_mode_outlined;
-      case MealType.dinner: return Icons.nightlight_outlined;
-      case MealType.snacks: return Icons.bakery_dining_outlined;
-    }
+  Color _getProgressColor(double progress) {
+    if (progress < 0.8) return AppColors.primary;
+    if (progress <= 1.0) return Colors.orange;
+    return Colors.red;
   }
 }
