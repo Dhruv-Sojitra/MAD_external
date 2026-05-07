@@ -1,0 +1,56 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+.vscode/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The Pythonic Way of Giting
+__pycache__/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Android related
+**/android/app/src/main/res/values/strings.xml
+**/android/key.properties
+**/android/app/src/main/res/raw/google_services.json
+.gradle/
+captures/
+externalNativeBuild/
+gradle-wrapper.properties
+
+# iOS related
+**/ios/Runner/GoogleService-Info.plist
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/App.framework
+**/ios/Flutter/engine.framework
+**/ios/Flutter/Frameworks
+**/ios/Pods/
+**/ios/.generated/
+
+# Coverage
+coverage/

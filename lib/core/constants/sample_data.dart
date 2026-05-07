@@ -1,0 +1,36 @@
+import 'package:mealp/features/meals/domain/models/food_item.dart';
+
+class SampleData {
+  static List<FoodItem> initialFoodItems = [
+    FoodItem(id: '1', name: 'Apple', calories: 52, protein: 0.3, carbs: 14, fats: 0.2, unit: 'piece'),
+    FoodItem(id: '2', name: 'Banana', calories: 89, protein: 1.1, carbs: 23, fats: 0.3, unit: 'piece'),
+    FoodItem(id: '3', name: 'Chicken Breast', calories: 165, protein: 31, carbs: 0, fats: 3.6, unit: '100g'),
+    FoodItem(id: '4', name: 'Brown Rice', calories: 111, protein: 2.6, carbs: 23, fats: 0.9, unit: '100g'),
+    FoodItem(id: '5', name: 'Oats', calories: 389, protein: 16.9, carbs: 66, fats: 6.9, unit: '100g'),
+    FoodItem(id: '6', name: 'Egg (Boiled)', calories: 155, protein: 13, carbs: 1.1, fats: 11, unit: 'piece'),
+    FoodItem(id: '7', name: 'Milk (Whole)', calories: 61, protein: 3.2, carbs: 4.8, fats: 3.3, unit: '100ml'),
+    FoodItem(id: '8', name: 'Paneer', calories: 265, protein: 18, carbs: 1.2, fats: 20, unit: '100g'),
+    FoodItem(id: '9', name: 'Almonds', calories: 579, protein: 21, carbs: 22, fats: 50, unit: '100g'),
+    FoodItem(id: '10', name: 'Salmon', calories: 208, protein: 20, carbs: 0, fats: 13, unit: '100g'),
+    FoodItem(id: '11', name: 'Greek Yogurt', calories: 59, protein: 10, carbs: 3.6, fats: 0.4, unit: '100g'),
+    FoodItem(id: '12', name: 'Sweet Potato', calories: 86, protein: 1.6, carbs: 20, fats: 0.1, unit: '100g'),
+    FoodItem(id: '13', name: 'Broccoli', calories: 34, protein: 2.8, carbs: 7, fats: 0.4, unit: '100g'),
+    FoodItem(id: '14', name: 'Peanut Butter', calories: 588, protein: 25, carbs: 20, fats: 50, unit: '100g'),
+    FoodItem(id: '15', name: 'Avocado', calories: 160, protein: 2, carbs: 9, fats: 15, unit: 'piece'),
+    FoodItem(id: '16', name: 'Quinoa', calories: 120, protein: 4.4, carbs: 21, fats: 1.9, unit: '100g'),
+    FoodItem(id: '17', name: 'Tofu', calories: 76, protein: 8, carbs: 1.9, fats: 4.8, unit: '100g'),
+    FoodItem(id: '18', name: 'Lentils', calories: 116, protein: 9, carbs: 20, fats: 0.4, unit: '100g'),
+    FoodItem(id: '19', name: 'Spinach', calories: 23, protein: 2.9, carbs: 3.6, fats: 0.4, unit: '100g'),
+    FoodItem(id: '20', name: 'Blueberries', calories: 57, protein: 0.7, carbs: 14, fats: 0.3, unit: '100g'),
+    FoodItem(id: '21', name: 'Beef (Lean)', calories: 250, protein: 26, carbs: 0, fats: 15, unit: '100g'),
+    FoodItem(id: '22', name: 'Pasta (Whole Wheat)', calories: 124, protein: 5.3, carbs: 27, fats: 0.5, unit: '100g'),
+    FoodItem(id: '23', name: 'Cottage Cheese', calories: 98, protein: 11, carbs: 3.4, fats: 4.3, unit: '100g'),
+    FoodItem(id: '24', name: 'Walnuts', calories: 654, protein: 15, carbs: 14, fats: 65, unit: '100g'),
+    FoodItem(id: '25', name: 'Turkey Breast', calories: 135, protein: 30, carbs: 0, fats: 1, unit: '100g'),
+    FoodItem(id: '26', name: 'Orange', calories: 47, protein: 0.9, carbs: 12, fats: 0.1, unit: 'piece'),
+    FoodItem(id: '27', name: 'Banana Bread', calories: 326, protein: 4.4, carbs: 55, fats: 10, unit: 'slice'),
+    FoodItem(id: '28', name: 'Green Tea', calories: 1, protein: 0, carbs: 0.2, fats: 0, unit: 'cup'),
+    FoodItem(id: '29', name: 'Olive Oil', calories: 884, protein: 0, carbs: 0, fats: 100, unit: '100ml'),
+    FoodItem(id: '30', name: 'Dark Chocolate', calories: 546, protein: 4.9, carbs: 61, fats: 31, unit: '100g'),
+  ];
+}
